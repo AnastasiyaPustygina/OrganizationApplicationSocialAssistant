@@ -20,6 +20,7 @@ import com.example.appfororg.OpenHelper;
 import com.example.appfororg.R;
 import com.example.appfororg.fragment.ListOfChatsFragment;
 import com.example.appfororg.domain.Person;
+import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
@@ -77,12 +79,12 @@ public class ChatListArrayAdapter extends RecyclerView.Adapter<ChatListArrayAdap
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-
-
-        try {
-            holder.ivPerAva.setImageBitmap(BitmapFactory.decodeByteArray(arrayListLastPer.get
-                            (position).getPhotoPer(), 0,
-                    arrayListLastPer.get(position).getPhotoPer().length));
+        try{
+            try{
+                Picasso.get().load(arrayListLastPer.get(position).getPhotoPer()).into(holder.ivPerAva);
+            }catch (Exception e){
+                holder.ivPerAva.setImageDrawable(context.getResources().getDrawable(R.drawable.ava_for_project));
+            }
             holder.lastMsg.setText(mapListChatIdAndMsg.get(arrayListChatId.get(position)));
             holder.tvNamePer.setText(arrayListLastPer.get(position).getName());
             Bundle bundle = new Bundle();
@@ -104,7 +106,7 @@ public class ChatListArrayAdapter extends RecyclerView.Adapter<ChatListArrayAdap
                 }
             });
         } catch (Exception e){
-            Log.e("TAG2", e.getMessage() + e.toString());
+            Log.e("ChatLIstArrayAdapter", e.getMessage() + e.toString());
         }
     }
 

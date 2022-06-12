@@ -30,6 +30,7 @@ import com.example.appfororg.domain.Message;
 import com.example.appfororg.domain.Organization;
 import com.example.appfororg.domain.Person;
 import com.example.appfororg.rest.AppApiVolley;
+import com.squareup.picasso.Picasso;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -40,13 +41,13 @@ public class ChatFragment extends Fragment {
 
     private ImageView imOrg, ivMicro;
     private TextView namePer;
-    private TextView status;
     private EditText et_msg;
     private ImageView bt_arrow_back;
     private AppCompatButton bt_update;
     private final int width  = Resources.getSystem().getDisplayMetrics().widthPixels;
     private final int height  = Resources.getSystem().getDisplayMetrics().heightPixels;
     private float scale = Resources.getSystem().getDisplayMetrics().density;
+    private MyChatThread myChatThread;
 
 
 
@@ -62,7 +63,6 @@ public class ChatFragment extends Fragment {
         et_msg = getActivity().findViewById(R.id.et_chat_msg);
         imOrg = getActivity().findViewById(R.id.iv_ch_imPer);
         ivMicro = getActivity().findViewById(R.id.iv_chat_micro);
-        status = getActivity().findViewById(R.id.tv_chat_status);
         namePer = getActivity().findViewById(R.id.tv_ch_namePer);
         int data = Math.max(width, height);
         int size20 = (int) (scale * (data / 80) + 0.5f);
@@ -77,10 +77,8 @@ public class ChatFragment extends Fragment {
         clForMicro.setPadding(size10, 0, size20, 0);
         clForMicro.setMinHeight(size20);
         imOrg.setPadding(size15, 0, 0, 0);
-        namePer.setPadding(size15, size15, size15, size5);
+        namePer.setPadding(size15, size15, size15, size15);
         namePer.setTextSize((float) data / 160);
-        status.setTextSize((float) data / 180);
-        status.setPadding(size15, 0, size15, size15);
         ivMicro.setPadding(size5, 0, 0, 0);
 
 
@@ -121,7 +119,7 @@ public class ChatFragment extends Fragment {
                 }
             }
         });
-        MyChatThread myChatThread = new MyChatThread(getContext());
+        myChatThread = new MyChatThread(getContext());
         myChatThread.start();
         imOrg.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -154,8 +152,14 @@ public class ChatFragment extends Fragment {
             }
         });
 
-        imOrg.setImageBitmap(BitmapFactory.
-                decodeByteArray(per.getPhotoPer(), 0, per.getPhotoPer().length));
+        try{
+            if(per.getPhotoPer() == null)
+                imOrg.setImageDrawable(getResources().getDrawable(R.drawable.ava_for_project));
+            else Picasso.get().load(per.getPhotoPer()).into(imOrg);
+        }catch (Exception e){
+            imOrg.setImageDrawable(getResources().getDrawable(R.drawable.ava_for_project));
+        }
+
         namePer.setText(per.getName());
 
 
@@ -227,6 +231,7 @@ public class ChatFragment extends Fragment {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+                if(!b) break;
                 try {
                     requireActivity().runOnUiThread(new Runnable() {
                         @Override
@@ -248,5 +253,9 @@ public class ChatFragment extends Fragment {
             b = !b;
         }
     }
-
+    @Override
+    public void onStop() {
+        super.onStop();
+        if(myChatThread.b) myChatThread.changeBool();
+    }
 }

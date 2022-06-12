@@ -79,7 +79,7 @@ public class ChatArrayAdapter extends RecyclerView.Adapter<RecyclerView.ViewHold
 
     @Override
     public int getItemCount() {
-            return allMsg.size();
+        return allMsg.size();
     }
 
     public class HolderZeroType extends RecyclerView.ViewHolder{

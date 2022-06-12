@@ -40,11 +40,12 @@ public class PersonMapper {
             Log.e("data", data);
             SharedPreferences sharedPreferences = SignInFragment.sharedPreferences;
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("per_photo" + jsonObject.getString("name"),
-                    jsonObject.getString("photo"));
+            editor.putString("per_pass" + jsonObject.getString("name"),
+                    jsonObject.getString("password"));
             editor.commit();
             person = new Person(jsonObject.getInt("id"), data,
                     jsonObject.getString("name"), jsonObject.getInt("age"),
+                    jsonObject.getString("photo"),
                     jsonObject.getString("date_of_birth"),
                     jsonObject.getString("city"));
         } catch (JSONException e) {

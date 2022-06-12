@@ -14,14 +14,13 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.core.graphics.drawable.RoundedBitmapDrawable;
-import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.appfororg.OpenHelper;
 import com.example.appfororg.R;
 import com.example.appfororg.domain.Person;
+import com.squareup.picasso.Picasso;
 
 public class PersonProfileFragment extends Fragment {
 
@@ -94,9 +93,12 @@ public class PersonProfileFragment extends Fragment {
 
         OpenHelper openHelper = new OpenHelper(getContext(), "op", null, OpenHelper.VERSION);
         Person person = openHelper.findPersonByLogin(getArguments().getString("NamePer"));
-        Bitmap bitmap = BitmapFactory.
-                decodeByteArray(person.getPhotoPer(), 0, person.getPhotoPer().length);
-        iv_ava.setImageBitmap(bitmap);
+
+        try{
+            Picasso.get().load(person.getPhotoPer()).into(iv_ava);
+        }catch (Exception e){
+            iv_ava.setImageDrawable(getResources().getDrawable(R.drawable.ava_for_project));
+        }
 
         iv_arrow_back.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -113,10 +115,15 @@ public class PersonProfileFragment extends Fragment {
             }
         });
         String dataValue;
+        if(person.getTelephone() != null){
         if(person.getTelephone().isEmpty()){
             tv_forData.setText("Адрес электронной почты: ");
             dataValue = person.getEmail();
         } else{
+            tv_forData.setText("Номер телефона : ");
+            dataValue = person.getTelephone();
+        }
+        }else{
             tv_forData.setText("Номер телефона : ");
             dataValue = person.getTelephone();
         }

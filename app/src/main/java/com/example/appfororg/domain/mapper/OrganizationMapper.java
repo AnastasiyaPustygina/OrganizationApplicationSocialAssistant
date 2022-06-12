@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import com.example.appfororg.R;
 import com.example.appfororg.domain.Organization;
@@ -21,17 +22,12 @@ public class OrganizationMapper {
     public static Organization organizationFromJson(JSONObject jsonObject, Context context) {
         Organization organization = null;
         try {
-
-            SharedPreferences sharedPreferences = SignInFragment.sharedPreferences;
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("org_photo" + jsonObject.getString("address"),
-                    jsonObject.getString("organizationPhoto"));
-            editor.commit();
             organization = new Organization(jsonObject.getInt("id"),
-                    jsonObject.getString("name"), "", jsonObject.getString("type"),
+                    jsonObject.getString("name"), jsonObject.getString("login")
+                    , jsonObject.getString("type"), jsonObject.getString("organizationPhoto"),
                     jsonObject.getString("description"), jsonObject.getString("address"),
-                    jsonObject.getString("needs"), jsonObject.getString("linkToWebsite"), ""
-                    ) ;
+                    jsonObject.getString("needs"), jsonObject.getString("linkToWebsite"),
+                    jsonObject.getString("password"));
         } catch (
                 JSONException e) {
             e.printStackTrace();

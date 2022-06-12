@@ -1,7 +1,6 @@
 package com.example.appfororg.fragment;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,6 +16,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
@@ -34,9 +34,19 @@ import com.example.appfororg.R;
 import com.example.appfororg.domain.Organization;
 import com.example.appfororg.domain.Person;
 import com.example.appfororg.rest.AppApiVolley;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
+import com.squareup.picasso.Picasso;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
+import java.util.List;
 
 public class OrgProfileFragment extends Fragment {
 
@@ -50,7 +60,6 @@ public class OrgProfileFragment extends Fragment {
     private final int height  = Resources.getSystem().getDisplayMetrics().heightPixels;
     private final int width  = Resources.getSystem().getDisplayMetrics().widthPixels;
     private float scale = Resources.getSystem().getDisplayMetrics().density;
-    public static SharedPreferences sharedPreferences = SignInFragment.sharedPreferences;
     private ActivityResultLauncher<String> myActivityResultLauncher;
 
     @Override
@@ -67,38 +76,41 @@ public class OrgProfileFragment extends Fragment {
                         Organization organization = openHelper.findOrgByLogin(
                                 getArguments().getString("LOG"));
                         iv_orgAva.setImageURI(result);
-                        byte[] photoOrg = null;
-                        Bitmap bitmap = null;
-                        try {
-                            iv_orgAva.buildDrawingCache();
-                            bitmap = iv_orgAva.getDrawingCache().copy(Bitmap.Config.RGB_565, false);
-                            iv_orgAva.setDrawingCacheEnabled(false);
-                            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                            Bitmap.CompressFormat imFor = Bitmap.CompressFormat.JPEG;
-                            bitmap.compress(imFor, 100, stream);
-                            photoOrg = stream.toByteArray();
-
-                            bitmap.recycle();
-                        }catch (Exception e){
-                            Log.e("DOWNLOAD IMAGES","Cannot to use a recycled bitmap");
-                        }
-
-                        SharedPreferences.Editor editor = sharedPreferences.edit();
-                        StringBuilder stringBuilder = new StringBuilder();
-                        for (int i = 0; i < photoOrg.length - 1; i++) {
-                            stringBuilder.append(String.valueOf(photoOrg[i])).append(" ");
-                        }
-                        stringBuilder.append(String.valueOf(
-                                photoOrg[photoOrg.length - 1]));
-
-                        editor.putString("org_photo" + organization.getAddress(), stringBuilder.toString());
-                        editor.commit();
-
-                        new AppApiVolley(getContext()).updateOrganization(
-                                organization.getId(), organization.getName(), organization.getLogin(),
-                                organization.getType(), photoOrg, organization.getDescription(),
-                                organization.getAddress(), organization.getNeeds(),
-                                organization.getLinkToWebsite(), organization.getPass());
+                        FirebaseApp.initializeApp(getContext());
+                        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+                        StorageReference uploadImageRef = storageReference.child(
+                                "images/" + result.getLastPathSegment());
+                        UploadTask uploadTask = uploadImageRef.putFile(result);
+                        uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                            @Override
+                            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                                taskSnapshot.getStorage().getDownloadUrl().addOnCompleteListener(
+                                        new OnCompleteListener<Uri>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Uri> task) {
+                                                String uploadedImageUrl = task.getResult().toString();
+                                                openHelper.changePhotoByOrgLog(organization.getLogin(),
+                                                        uploadedImageUrl);
+                                                Log.e("upl_image", openHelper.findOrgByLogin(
+                                                        organization.getLogin()).getPhotoOrg());
+                                                new AppApiVolley(getContext()).updateOrganization(
+                                                        organization.getId(), organization.getName(), organization.getLogin(),
+                                                        organization.getType(), openHelper.findOrgByLogin(
+                                                                organization.getLogin()).getPhotoOrg(),
+                                                        organization.getDescription(), organization.getAddress(),
+                                                        organization.getNeeds(), organization.getLinkToWebsite(),
+                                                        organization.getPass());
+                                            }
+                                        }
+                                );
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception e) {
+                                Toast.makeText(getContext(), "Не удалось загрузить изображение",
+                                        Toast.LENGTH_SHORT).show();
+                            }
+                        });
                     }
                 }
         );
@@ -128,51 +140,54 @@ public class OrgProfileFragment extends Fragment {
         LinearLayout linearLayoutPhotoName = getActivity().findViewById(R.id.ll_prof_photoAndName);
         OpenHelper openHelper = new OpenHelper
                 (getContext(), "op", null, OpenHelper.VERSION);
+
+        Log.e("ohp",openHelper.findAllPeople().toString());
+
         Organization organization = openHelper.findOrgByLogin(getArguments().getString("LOG"));
         int data = Math.max(width, height);
 
-            int size20 = (int) (scale * (data / 80) + 0.5f);
-            int size10 = (int) (scale * (data / 140) + 0.5f);
-            int size50 = (int) (scale * (data / 37) + 0.5f);
-            int size5 = (int) (scale * (data / 320) + 0.5f);
-            int size30 = (int) (scale * (data / 60) + 0.5f);
-            int size45 = (int) (scale * (data / 44) + 0.5f);
-            int size60 = (int) (scale * (data / 30) + 0.5f);
-            linearLayoutPhotoName.setPadding(size20, size30, size20, size20);
-            prof.setPadding(size30, size60, size30, 0);
-            prof.setTextSize((float) data / 85);
-            tv_name.setTextSize((float)data / 111);
-            tv_name.setPadding(size30, size45, size30, size45);
-            float sizeForTV15 = (float) data / 160;
-            tv_type.setTextSize(sizeForTV15);
-            tv_type.setPadding(size30, 0, size20, size10);
-            TextView tv_forType = getActivity().findViewById(R.id.tv_prof_forType);
-            tv_forType.setPadding(size30, 0, size20, size10);
-            tv_forType.setTextSize(sizeForTV15);
-            TextView tv_forDesc = getActivity().findViewById(R.id.tv_prof_forDesc);
-            tv_forDesc.setPadding(size30, 0, size20, size10);
-            tv_forDesc.setTextSize(sizeForTV15);
-            LinearLayout linearLayoutForEditDesc = getActivity().findViewById(R.id.ll_prof_forEdit);
-            linearLayoutForEditDesc.setPadding(size10, 0, 0, size10);
-            TextView tv_forNeeds = getActivity().findViewById(R.id.tv_prof_forNeeds);
-            tv_forNeeds.setTextSize(sizeForTV15);
-            tv_forNeeds.setPadding(size30, 0, size20, size10);
-            LinearLayout linearLayoutForEditNeeds = getActivity().findViewById(R.id.ll_prof_forEditNeeds);
-            linearLayoutForEditNeeds.setPadding(size10, 0, 0, size10);
-            tv_address.setTextSize(sizeForTV15);
-            tv_address.setPadding(size30, 0, size20, size10);
-            TextView tv_forAddress = getActivity().findViewById(R.id.tv_prof_forAddress);
-            tv_forAddress.setPadding(size30, 0, size20, size10);
-            tv_forAddress.setTextSize(sizeForTV15);
-            tv_link.setTextSize(sizeForTV15);
-            tv_link.setPadding(size30, 0, size20, size45);
-            TextView tv_forLink = getActivity().findViewById(R.id.tv_prof_forLink);
-            tv_forLink.setPadding(size30, 0, size20, size10);
-            tv_forLink.setTextSize(sizeForTV15);
-            bt_listOfChats.setMaxHeight(data / 20);
-            bt_listOfChats.setPadding(0, size10, 0, size5);
-            ImageView bt_prof = getActivity().findViewById(R.id.bt_org_profile_profile);
-            bt_prof.setPadding(0, size5, 0, size5);
+        int size20 = (int) (scale * (data / 80) + 0.5f);
+        int size10 = (int) (scale * (data / 140) + 0.5f);
+        int size50 = (int) (scale * (data / 37) + 0.5f);
+        int size5 = (int) (scale * (data / 320) + 0.5f);
+        int size30 = (int) (scale * (data / 60) + 0.5f);
+        int size45 = (int) (scale * (data / 44) + 0.5f);
+        int size60 = (int) (scale * (data / 30) + 0.5f);
+        linearLayoutPhotoName.setPadding(size20, size30, size20, size20);
+        prof.setPadding(size30, size60, size30, 0);
+        prof.setTextSize((float) data / 85);
+        tv_name.setTextSize((float)data / 111);
+        tv_name.setPadding(size30, size45, size30, size45);
+        float sizeForTV15 = (float) data / 160;
+        tv_type.setTextSize(sizeForTV15);
+        tv_type.setPadding(size30, 0, size20, size10);
+        TextView tv_forType = getActivity().findViewById(R.id.tv_prof_forType);
+        tv_forType.setPadding(size30, 0, size20, size10);
+        tv_forType.setTextSize(sizeForTV15);
+        TextView tv_forDesc = getActivity().findViewById(R.id.tv_prof_forDesc);
+        tv_forDesc.setPadding(size30, 0, size20, size10);
+        tv_forDesc.setTextSize(sizeForTV15);
+        LinearLayout linearLayoutForEditDesc = getActivity().findViewById(R.id.ll_prof_forEdit);
+        linearLayoutForEditDesc.setPadding(size10, 0, 0, size10);
+        TextView tv_forNeeds = getActivity().findViewById(R.id.tv_prof_forNeeds);
+        tv_forNeeds.setTextSize(sizeForTV15);
+        tv_forNeeds.setPadding(size30, 0, size20, size10);
+        LinearLayout linearLayoutForEditNeeds = getActivity().findViewById(R.id.ll_prof_forEditNeeds);
+        linearLayoutForEditNeeds.setPadding(size10, 0, 0, size10);
+        tv_address.setTextSize(sizeForTV15);
+        tv_address.setPadding(size30, 0, size20, size10);
+        TextView tv_forAddress = getActivity().findViewById(R.id.tv_prof_forAddress);
+        tv_forAddress.setPadding(size30, 0, size20, size10);
+        tv_forAddress.setTextSize(sizeForTV15);
+        tv_link.setTextSize(sizeForTV15);
+        tv_link.setPadding(size30, 0, size20, size45);
+        TextView tv_forLink = getActivity().findViewById(R.id.tv_prof_forLink);
+        tv_forLink.setPadding(size30, 0, size20, size10);
+        tv_forLink.setTextSize(sizeForTV15);
+        bt_listOfChats.setMaxHeight(data / 20);
+        bt_listOfChats.setPadding(0, size10, 0, size5);
+        ImageView bt_prof = getActivity().findViewById(R.id.bt_org_profile_profile);
+        bt_prof.setPadding(0, size5, 0, size5);
 
 
 
@@ -195,7 +210,8 @@ public class OrgProfileFragment extends Fragment {
                 else{
                     new AppApiVolley(getContext()).updateOrganization(
                             organization.getId(), organization.getName(), organization.getLogin(),
-                            organization.getType(), organization.getPhotoOrg(), et_desc.getText().toString(),
+                            organization.getType(), openHelper.findOrgByLogin(organization.getLogin()).getPhotoOrg(),
+                            et_desc.getText().toString(),
                             organization.getAddress(), et_needs.getText().toString(),
                             organization.getLinkToWebsite(), organization.getPass());
                     bt_createDesc.setImageDrawable(getResources().getDrawable(R.drawable.iv_write));
@@ -225,9 +241,9 @@ public class OrgProfileFragment extends Fragment {
                 else{
                     new AppApiVolley(getContext()).updateOrganization(
                             organization.getId(), organization.getName(), organization.getLogin(),
-                            organization.getType(), organization.getPhotoOrg(), et_desc.getText().toString(),
-                            organization.getAddress(), et_needs.getText().toString(), organization.getLinkToWebsite(),
-                            organization.getPass()
+                            organization.getType(), openHelper.findOrgByLogin(organization.getLogin()).getPhotoOrg(),
+                            et_desc.getText().toString(), organization.getAddress(),
+                            et_needs.getText().toString(), organization.getLinkToWebsite(), organization.getPass()
                     );
                     bt_createNeeds.setImageDrawable(getResources().getDrawable(R.drawable.iv_write));
                     et_needs.setEnabled(false);
@@ -240,9 +256,15 @@ public class OrgProfileFragment extends Fragment {
             }
         });
 
-        Bitmap bitmap = BitmapFactory.
-                decodeByteArray(organization.getPhotoOrg(), 0, organization.getPhotoOrg().length);
-        iv_orgAva.setImageBitmap(bitmap);
+        iv_orgAva.setImageDrawable(getResources().getDrawable(R.drawable.ava_for_project));
+        try{
+            if(organization.getPhotoOrg() != null && !organization.getPhotoOrg().equals("null")) {
+                Log.e("notNullPhoto", organization.toString());
+                Picasso.get().load(organization.getPhotoOrg()).into(iv_orgAva);
+            }
+        }catch (Exception e){
+            iv_orgAva.setImageDrawable(getResources().getDrawable(R.drawable.ava_for_project));
+        }
         iv_orgAva.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -254,7 +276,9 @@ public class OrgProfileFragment extends Fragment {
         tv_name.setText(organization.getName());
         tv_link.setText(organization.getLinkToWebsite() == null ? "(не указан)"
                 : organization.getLinkToWebsite());
+        if(!organization.getDescription().equals("null"))
         et_desc.setText(organization.getDescription(), null);
+        if(!organization.getNeeds().equals("null"))
         et_needs.setText(organization.getNeeds(), null);
         bt_listOfChats.setOnClickListener(new View.OnClickListener() {
             @Override

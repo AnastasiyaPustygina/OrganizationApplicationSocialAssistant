@@ -28,6 +28,10 @@ import com.example.appfororg.domain.Organization;
 import com.example.appfororg.rest.AppApiVolley;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 
 public class RegFragment extends Fragment {
 
@@ -169,8 +173,13 @@ public class RegFragment extends Fragment {
             bt_reg_fr_reg.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    OpenHelper openHelper = new OpenHelper(getContext(),
+                            "op", null, OpenHelper.VERSION);
                     if (!et_pass.getText().toString().equals(et_checkPass.getText().toString()))
                         checking.setText("Пароли не совпадают");
+                    else if(openHelper.findOrgByLogin(et_log.getText().toString()).getId() != -1
+                            || openHelper.findOrgByAddress(et_address.getText().toString())
+                            .getId() != -1) checking.setText("Такая организация уже существует");
                     else {
                         String name = et_name.getText().toString();
                         String pass = et_pass.getText().toString();
@@ -184,30 +193,20 @@ public class RegFragment extends Fragment {
                                 address.isEmpty())
                             checking.setText("Не все поля заполнены");
                         else {
-                            Bitmap bitmap = BitmapFactory.decodeResource(getResources(),
-                                    R.drawable.ava_for_project);
-                            SharedPreferences.Editor editor = SignInFragment.sharedPreferences.edit();
-                            StringBuilder stringBuilder = new StringBuilder();
-                            ByteArrayOutputStream stream = new ByteArrayOutputStream();
-                            Bitmap.CompressFormat imFor = Bitmap.CompressFormat.JPEG;
-                            bitmap.compress(imFor, 0, stream);
-                            byte[] photoOrg = stream.toByteArray();
-                            for (int i = 0; i < photoOrg.length - 1; i++) {
-                                stringBuilder.append(String.valueOf(photoOrg[i])).append(" ");
-                            }
-                            stringBuilder.append(String.valueOf(
-                                    photoOrg[photoOrg.length - 1]));
-
-                            editor.putString("org_photo" + address, stringBuilder.toString());
-                            editor.commit();
                             if(linkToWebsite.isEmpty()) linkToWebsite = "(не указан)";
+                            String encodedHash = null;
+                            try {
+                                MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                                encodedHash = Arrays.toString(digest.digest(
+                                        pass.getBytes(StandardCharsets.UTF_8)));
+                            } catch (NoSuchAlgorithmException e) {
+                                e.printStackTrace();
+                            }
                             Organization organization = new Organization(
-                                    name, login, type, "",
-                                    address, "", linkToWebsite,  pass);
-                            OpenHelper openHelper = new OpenHelper(getContext(),
-                                    "op", null, OpenHelper.VERSION);
+                                    name, login, type, null, "",
+                                    address, "", linkToWebsite,  encodedHash);
                             openHelper.insertOrg(organization);
-                            new AppApiVolley(getContext()).addOrganization(organization);
+                            new AppApiVolley(getContext()).addOrganization(openHelper.findOrgByLogin(login));
                             bt_reg_fr_reg.setOnClickListener((view1) -> {
                                 NavHostFragment.
                                         findNavController(RegFragment.this).navigate(
