@@ -86,6 +86,7 @@ public class Person {
         if (o == null || getClass() != o.getClass()) return false;
         Person person = (Person) o;
         return age == person.age && Objects.equals(telephone, person.telephone) && Objects.equals(email, person.email) && Objects.equals(name, person.name) && photoPer.equals(person.photoPer) && Objects.equals(dateOfBirth, person.dateOfBirth) && Objects.equals(city, person.city);
+
     }
 
     @Override
