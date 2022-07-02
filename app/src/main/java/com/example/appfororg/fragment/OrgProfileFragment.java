@@ -1,9 +1,12 @@
 package com.example.appfororg.fragment;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -27,6 +30,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.core.graphics.drawable.RoundedBitmapDrawable;
 import androidx.core.graphics.drawable.RoundedBitmapDrawableFactory;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.appfororg.OpenHelper;
@@ -50,17 +54,17 @@ import java.util.List;
 
 public class OrgProfileFragment extends Fragment {
 
-    ImageView iv_orgAva;
-    EditText et_desc, et_needs;
-    TextView tv_name, tv_type, tv_address, tv_link;
-    ImageView bt_createDesc, bt_createNeeds;
-    ImageView bt_listOfChats;
-    static boolean isDescCompleted = true;
-    static boolean isNeedsCompleted = true;
+    private ImageView iv_orgAva, iv_logout;
+    private EditText et_desc, et_needs;
+    private TextView tv_name, tv_type, tv_address, tv_link;
+    private ImageView bt_createDesc, bt_createNeeds, bt_listOfChats;
+    private static boolean isDescCompleted = true;
+    private static boolean isNeedsCompleted = true;
     private final int height  = Resources.getSystem().getDisplayMetrics().heightPixels;
     private final int width  = Resources.getSystem().getDisplayMetrics().widthPixels;
     private float scale = Resources.getSystem().getDisplayMetrics().density;
     private ActivityResultLauncher<String> myActivityResultLauncher;
+    public static final String APP_PREFERENCES = "my_pref";
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -78,7 +82,8 @@ public class OrgProfileFragment extends Fragment {
                         iv_orgAva.setImageURI(result);
                         FirebaseApp.initializeApp(getContext());
                         StorageReference storageReference = FirebaseStorage.getInstance().getReference();
-                        StorageReference uploadImageRef = storageReference.child(
+                        StorageReference uploadImageRef;
+                        uploadImageRef = storageReference.child(
                                 "images/" + result.getLastPathSegment());
                         UploadTask uploadTask = uploadImageRef.putFile(result);
                         uploadTask.addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
@@ -91,8 +96,6 @@ public class OrgProfileFragment extends Fragment {
                                                 String uploadedImageUrl = task.getResult().toString();
                                                 openHelper.changePhotoByOrgLog(organization.getLogin(),
                                                         uploadedImageUrl);
-                                                Log.e("upl_image", openHelper.findOrgByLogin(
-                                                        organization.getLogin()).getPhotoOrg());
                                                 new AppApiVolley(getContext()).updateOrganization(
                                                         organization.getId(), organization.getName(), organization.getLogin(),
                                                         organization.getType(), openHelper.findOrgByLogin(
@@ -120,28 +123,25 @@ public class OrgProfileFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.org_profile_fragment, container, false);
-    }
+        View view = inflater.inflate(R.layout.org_profile_fragment, container, false);
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        iv_orgAva = getActivity().findViewById(R.id.iv_org_profile_photoOrg);
-        et_desc = getActivity().findViewById(R.id.ed_org_profile_descOrg);
-        et_needs = getActivity().findViewById(R.id.ed_org_profile_needsOrg);
-        tv_address = getActivity().findViewById(R.id.tv_org_profile_addressOrg);
-        tv_name = getActivity().findViewById(R.id.tv_org_profile_nameOrg);
-        bt_listOfChats = getActivity().findViewById(R.id.bt_org_profile_chat);
-        tv_type = getActivity().findViewById(R.id.tv_org_profile_typeOrg);
-        tv_link = getActivity().findViewById(R.id.tv_org_profile_linkToWeb);
-        bt_createDesc = getActivity().findViewById(R.id.iv_org_profile_createDesc);
-        bt_createNeeds = getActivity().findViewById(R.id.iv_org_profile_createNeeds);
-        TextView prof = getActivity().findViewById(R.id.tv_prof_profile);
-        LinearLayout linearLayoutPhotoName = getActivity().findViewById(R.id.ll_prof_photoAndName);
+        iv_logout = view.findViewById(R.id.iv_logout);
+        iv_orgAva = view.findViewById(R.id.iv_org_profile_photoOrg);
+        et_desc = view.findViewById(R.id.ed_org_profile_descOrg);
+        et_needs = view.findViewById(R.id.ed_org_profile_needsOrg);
+        tv_address = view.findViewById(R.id.tv_org_profile_addressOrg);
+        tv_name = view.findViewById(R.id.tv_org_profile_nameOrg);
+        bt_listOfChats = view.findViewById(R.id.bt_org_profile_chat);
+        tv_type = view.findViewById(R.id.tv_org_profile_typeOrg);
+        tv_link = view.findViewById(R.id.tv_org_profile_linkToWeb);
+        bt_createDesc = view.findViewById(R.id.iv_org_profile_createDesc);
+        bt_createNeeds = view.findViewById(R.id.iv_org_profile_createNeeds);
+        ConstraintLayout cl_prof = view.findViewById(R.id.cl_prof_profile);
+        TextView prof = view.findViewById(R.id.tv_prof_profile);
+
+        LinearLayout linearLayoutPhotoName = view.findViewById(R.id.ll_prof_photoAndName);
         OpenHelper openHelper = new OpenHelper
                 (getContext(), "op", null, OpenHelper.VERSION);
-
-        Log.e("ohp",openHelper.findAllPeople().toString());
 
         Organization organization = openHelper.findOrgByLogin(getArguments().getString("LOG"));
         int data = Math.max(width, height);
@@ -154,104 +154,127 @@ public class OrgProfileFragment extends Fragment {
         int size45 = (int) (scale * (data / 44) + 0.5f);
         int size60 = (int) (scale * (data / 30) + 0.5f);
         linearLayoutPhotoName.setPadding(size20, size30, size20, size20);
-        prof.setPadding(size30, size60, size30, 0);
+        cl_prof.setPadding(size30, size60, size30, 0);
         prof.setTextSize((float) data / 85);
         tv_name.setTextSize((float)data / 111);
         tv_name.setPadding(size30, size45, size30, size45);
         float sizeForTV15 = (float) data / 160;
         tv_type.setTextSize(sizeForTV15);
         tv_type.setPadding(size30, 0, size20, size10);
-        TextView tv_forType = getActivity().findViewById(R.id.tv_prof_forType);
+        TextView tv_forType = view.findViewById(R.id.tv_prof_forType);
         tv_forType.setPadding(size30, 0, size20, size10);
         tv_forType.setTextSize(sizeForTV15);
-        TextView tv_forDesc = getActivity().findViewById(R.id.tv_prof_forDesc);
+        TextView tv_forDesc = view.findViewById(R.id.tv_prof_forDesc);
         tv_forDesc.setPadding(size30, 0, size20, size10);
         tv_forDesc.setTextSize(sizeForTV15);
-        LinearLayout linearLayoutForEditDesc = getActivity().findViewById(R.id.ll_prof_forEdit);
+        LinearLayout linearLayoutForEditDesc = view.findViewById(R.id.ll_prof_forEdit);
         linearLayoutForEditDesc.setPadding(size10, 0, 0, size10);
-        TextView tv_forNeeds = getActivity().findViewById(R.id.tv_prof_forNeeds);
+        TextView tv_forNeeds = view.findViewById(R.id.tv_prof_forNeeds);
         tv_forNeeds.setTextSize(sizeForTV15);
         tv_forNeeds.setPadding(size30, 0, size20, size10);
-        LinearLayout linearLayoutForEditNeeds = getActivity().findViewById(R.id.ll_prof_forEditNeeds);
+        LinearLayout linearLayoutForEditNeeds = view.findViewById(R.id.ll_prof_forEditNeeds);
         linearLayoutForEditNeeds.setPadding(size10, 0, 0, size10);
         tv_address.setTextSize(sizeForTV15);
         tv_address.setPadding(size30, 0, size20, size10);
-        TextView tv_forAddress = getActivity().findViewById(R.id.tv_prof_forAddress);
+        TextView tv_forAddress = view.findViewById(R.id.tv_prof_forAddress);
         tv_forAddress.setPadding(size30, 0, size20, size10);
         tv_forAddress.setTextSize(sizeForTV15);
         tv_link.setTextSize(sizeForTV15);
         tv_link.setPadding(size30, 0, size20, size45);
-        TextView tv_forLink = getActivity().findViewById(R.id.tv_prof_forLink);
+        TextView tv_forLink = view.findViewById(R.id.tv_prof_forLink);
         tv_forLink.setPadding(size30, 0, size20, size10);
         tv_forLink.setTextSize(sizeForTV15);
         bt_listOfChats.setMaxHeight(data / 20);
         bt_listOfChats.setPadding(0, size10, 0, size5);
-        ImageView bt_prof = getActivity().findViewById(R.id.bt_org_profile_profile);
+        ImageView bt_prof = view.findViewById(R.id.bt_org_profile_profile);
         bt_prof.setPadding(0, size5, 0, size5);
-
-
-
-
-        ConstraintLayout constraintLayout = getActivity().findViewById(R.id.cl_prof);
+        ConstraintLayout constraintLayout = view.findViewById(R.id.cl_prof);
         constraintLayout.setMinHeight(size50);
+
+        iv_logout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                SharedPreferences.Editor editor = getContext().getSharedPreferences
+                        (APP_PREFERENCES, Context.MODE_PRIVATE).edit();
+                editor.putString("last_login", " ");
+                editor.putString("last_password", " ");
+                editor.commit();
+                iv_logout.setOnClickListener((view1) -> {
+                    NavHostFragment.
+                            findNavController(OrgProfileFragment.this).navigate(
+                            R.id.action_orgProfileFragment_to_signInFragment);
+                });
+                iv_logout.performClick();
+            }
+        });
+
         bt_createDesc.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isDescCompleted) {
-                    et_desc.setEnabled(true);
-                    et_desc.requestFocus();
-                    et_desc.setFocusableInTouchMode(true);
-                    InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(
-                            Context.INPUT_METHOD_SERVICE);
-                    inputMethodManager.showSoftInput(et_desc, InputMethodManager.SHOW_FORCED);
-                    bt_createDesc.setImageDrawable(getResources().getDrawable(R.drawable.check_mark));
-                    isDescCompleted = !isDescCompleted;
+                if(!isOnline()){
+                    FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+                    fragmentManager.beginTransaction().add(R.id.fl_main, new NoInternetConnectionFragment()).commit();
                 }
-                else{
-                    new AppApiVolley(getContext()).updateOrganization(
-                            organization.getId(), organization.getName(), organization.getLogin(),
-                            organization.getType(), openHelper.findOrgByLogin(organization.getLogin()).getPhotoOrg(),
-                            et_desc.getText().toString(),
-                            organization.getAddress(), et_needs.getText().toString(),
-                            organization.getLinkToWebsite(), organization.getPass());
-                    bt_createDesc.setImageDrawable(getResources().getDrawable(R.drawable.iv_write));
-                    et_desc.setEnabled(false);
-                    et_desc.setFocusableInTouchMode(false);
-                    et_desc.setImeOptions(EditorInfo.IME_ACTION_DONE);
-                    isDescCompleted = !isDescCompleted;
-                    openHelper.changeDescByLog(getArguments().getString("LOG"),
-                            et_desc.getText().toString());
+                else {
+                    if (isDescCompleted) {
+                        et_desc.setEnabled(true);
+                        et_desc.requestFocus();
+                        et_desc.setFocusableInTouchMode(true);
+                        InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(
+                                Context.INPUT_METHOD_SERVICE);
+                        inputMethodManager.showSoftInput(et_desc, InputMethodManager.SHOW_FORCED);
+                        bt_createDesc.setImageDrawable(getResources().getDrawable(R.drawable.check_mark));
+                        isDescCompleted = !isDescCompleted;
+                    } else {
+                        new AppApiVolley(getContext()).updateOrganization(
+                                organization.getId(), organization.getName(), organization.getLogin(),
+                                organization.getType(), openHelper.findOrgByLogin(organization.getLogin()).getPhotoOrg(),
+                                et_desc.getText().toString(),
+                                organization.getAddress(), et_needs.getText().toString(),
+                                organization.getLinkToWebsite(), organization.getPass());
+                        bt_createDesc.setImageDrawable(getResources().getDrawable(R.drawable.iv_write));
+                        et_desc.setEnabled(false);
+                        et_desc.setFocusableInTouchMode(false);
+                        et_desc.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                        isDescCompleted = !isDescCompleted;
+                        openHelper.changeDescByLog(getArguments().getString("LOG"),
+                                et_desc.getText().toString());
+                    }
                 }
             }
         });
         bt_createNeeds.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(isNeedsCompleted) {
-                    et_needs.setEnabled(true);
-                    et_needs.requestFocus();
-                    et_needs.setFocusableInTouchMode(true);
-                    InputMethodManager inputMethodManager = (InputMethodManager)
-                            getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                    inputMethodManager.showSoftInput(et_needs, InputMethodManager.SHOW_FORCED);
-                    bt_createNeeds.setImageDrawable(getResources().getDrawable(R.drawable.check_mark));
-                    isNeedsCompleted = !isNeedsCompleted;
+                if (!isOnline()) {
+                    FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+                    fragmentManager.beginTransaction().add(R.id.fl_main, new NoInternetConnectionFragment()).commit();
+                } else {
+                    if (isNeedsCompleted) {
+                        et_needs.setEnabled(true);
+                        et_needs.requestFocus();
+                        et_needs.setFocusableInTouchMode(true);
+                        InputMethodManager inputMethodManager = (InputMethodManager)
+                                getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                        inputMethodManager.showSoftInput(et_needs, InputMethodManager.SHOW_FORCED);
+                        bt_createNeeds.setImageDrawable(getResources().getDrawable(R.drawable.check_mark));
+                        isNeedsCompleted = !isNeedsCompleted;
 
-                }
-                else{
-                    new AppApiVolley(getContext()).updateOrganization(
-                            organization.getId(), organization.getName(), organization.getLogin(),
-                            organization.getType(), openHelper.findOrgByLogin(organization.getLogin()).getPhotoOrg(),
-                            et_desc.getText().toString(), organization.getAddress(),
-                            et_needs.getText().toString(), organization.getLinkToWebsite(), organization.getPass()
-                    );
-                    bt_createNeeds.setImageDrawable(getResources().getDrawable(R.drawable.iv_write));
-                    et_needs.setEnabled(false);
-                    et_needs.setFocusableInTouchMode(false);
-                    et_needs.setImeOptions(EditorInfo.IME_ACTION_DONE);
-                    isNeedsCompleted = !isNeedsCompleted;
-                    openHelper.changeNeedsByLog(getArguments().getString("LOG"),
-                            et_needs.getText().toString());
+                    } else {
+                        new AppApiVolley(getContext()).updateOrganization(
+                                organization.getId(), organization.getName(), organization.getLogin(),
+                                organization.getType(), openHelper.findOrgByLogin(organization.getLogin()).getPhotoOrg(),
+                                et_desc.getText().toString(), organization.getAddress(),
+                                et_needs.getText().toString(), organization.getLinkToWebsite(), organization.getPass()
+                        );
+                        bt_createNeeds.setImageDrawable(getResources().getDrawable(R.drawable.iv_write));
+                        et_needs.setEnabled(false);
+                        et_needs.setFocusableInTouchMode(false);
+                        et_needs.setImeOptions(EditorInfo.IME_ACTION_DONE);
+                        isNeedsCompleted = !isNeedsCompleted;
+                        openHelper.changeNeedsByLog(getArguments().getString("LOG"),
+                                et_needs.getText().toString());
+                    }
                 }
             }
         });
@@ -259,7 +282,6 @@ public class OrgProfileFragment extends Fragment {
         iv_orgAva.setImageDrawable(getResources().getDrawable(R.drawable.ava_for_project));
         try{
             if(organization.getPhotoOrg() != null && !organization.getPhotoOrg().equals("null")) {
-                Log.e("notNullPhoto", organization.toString());
                 Picasso.get().load(organization.getPhotoOrg()).into(iv_orgAva);
             }
         }catch (Exception e){
@@ -268,7 +290,11 @@ public class OrgProfileFragment extends Fragment {
         iv_orgAva.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                myActivityResultLauncher.launch("image/*");
+                if(!isOnline()){
+                    FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+                    fragmentManager.beginTransaction().add(R.id.fl_main, new NoInternetConnectionFragment()).commit();
+                }
+                else myActivityResultLauncher.launch("image/*");
             }
         });
         tv_type.setText(organization.getType());
@@ -277,9 +303,9 @@ public class OrgProfileFragment extends Fragment {
         tv_link.setText(organization.getLinkToWebsite() == null ? "(не указан)"
                 : organization.getLinkToWebsite());
         if(!organization.getDescription().equals("null"))
-        et_desc.setText(organization.getDescription(), null);
+            et_desc.setText(organization.getDescription(), null);
         if(!organization.getNeeds().equals("null"))
-        et_needs.setText(organization.getNeeds(), null);
+            et_needs.setText(organization.getNeeds(), null);
         bt_listOfChats.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -293,5 +319,16 @@ public class OrgProfileFragment extends Fragment {
                 bt_listOfChats.performClick();
             }
         });
+
+        return view;
+    }
+
+
+    public boolean isOnline(){
+        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        if(networkInfo == null) return false;
+        else return networkInfo.isConnected();
     }
 }

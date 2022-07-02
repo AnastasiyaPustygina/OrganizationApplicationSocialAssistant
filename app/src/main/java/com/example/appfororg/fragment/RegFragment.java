@@ -1,9 +1,12 @@
 package com.example.appfororg.fragment;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -18,6 +21,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.appfororg.OpenHelper;
@@ -44,29 +48,39 @@ public class RegFragment extends Fragment {
     private final int height  = Resources.getSystem().getDisplayMetrics().heightPixels;
     private final int width  = Resources.getSystem().getDisplayMetrics().widthPixels;
     private float scale = Resources.getSystem().getDisplayMetrics().density;
+    private final String IMAGE_URL = "https://firebasestorage.googleapis.com/v0/b/social-assistant-7a25d.appspot.com/o/images%2FavaForProject.jpg?alt=media&token=e0821c60-2fc5-4d68-92fa-2538d3baca1a";
 
 
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.reg_fragment, container, false);
-    }
+        View view = inflater.inflate(R.layout.reg_fragment, container, false);
 
-    @Override
-    public void onStart() {
+        radioGroup = view.findViewById(R.id.rg_reg);
+        hospice = view.findViewById(R.id.rbt_reg_hospice);
+        nursingHome = view.findViewById(R.id.rbt_reg_nursingHome);
+        orphanHome = view.findViewById(R.id.rbt_reg_orphanHome);
+        et_name = view.findViewById(R.id.ed_reg_name);
+        et_log = view.findViewById(R.id.ed_reg_log);
+        et_address = view.findViewById(R.id.ed_reg_address);
+        et_link = view.findViewById(R.id.ed_reg_link);
+        et_pass = view.findViewById(R.id.ed_reg_pass1);
+        et_checkPass = view.findViewById(R.id.ed_reg_pass2);
+        bt_reg_fr_reg = view.findViewById(R.id.bt_reg_fr_reg);
+        checking = view.findViewById(R.id.checking);
+        RadioButton rb_nursingHome  = view.findViewById(R.id.rbt_reg_nursingHome);
+        RadioButton rb_orphanHome  = view.findViewById(R.id.rbt_reg_orphanHome);
+        RadioButton rb_hospice  = view.findViewById(R.id.rbt_reg_hospice);
+        TextView tv_forType = view.findViewById(R.id.tv_reg_forType);
+        TextView tv_forLog= view.findViewById(R.id.tv_reg_forLog);
+        TextView tv_forAddress = view.findViewById(R.id.tv_reg_forAddress);
+        TextView tv_forLink = view.findViewById(R.id.tv_reg_forLink);
+        TextView tv_notNecessary = view.findViewById(R.id.tv_reg_notNecessary);
+        TextView tv_forPass1 = view.findViewById(R.id.tv_reg_forPass);
+        TextView tv_forPass2 = view.findViewById(R.id.tv_reg_forPass2);
+        TextView tv_header = view.findViewById(R.id.tv_reg_header);
+        TextView tv_forName= view.findViewById(R.id.tv_reg_forName);
 
-        super.onStart();
 
-        radioGroup = getActivity().findViewById(R.id.rg_reg);
-        hospice = getActivity().findViewById(R.id.rbt_reg_hospice);
-        nursingHome = getActivity().findViewById(R.id.rbt_reg_nursingHome);
-        orphanHome = getActivity().findViewById(R.id.rbt_reg_orphanHome);
-        et_name = getActivity().findViewById(R.id.ed_reg_name);
-        et_log = getActivity().findViewById(R.id.ed_reg_log);
-        et_address = getActivity().findViewById(R.id.ed_reg_address);
-        et_link = getActivity().findViewById(R.id.ed_reg_link);
-        et_pass = getActivity().findViewById(R.id.ed_reg_pass1);
-        et_checkPass = getActivity().findViewById(R.id.ed_reg_pass2);
-        bt_reg_fr_reg = getActivity().findViewById(R.id.bt_reg_fr_reg);
-        checking = getActivity().findViewById(R.id.checking);
+
         int data = Math.max(width, height);
         int size20 = (int) (scale * (data / 80) + 0.5f);
         int size10 = (int) (scale * (data / 140) + 0.5f);
@@ -75,10 +89,9 @@ public class RegFragment extends Fragment {
         int size80 = (int) (scale * (data / 20) + 0.5f);
         float sizeForTV15 = (float) data / 160;
 
-        TextView tv_header = getActivity().findViewById(R.id.tv_reg_header);
+
         tv_header.setTextSize((float) data / 85);
         tv_header.setPadding(size30, size60, 0, 0);
-        TextView tv_forName= getActivity().findViewById(R.id.tv_reg_forName);
         tv_forName.setPadding(size20, size60, 0, 0);
         tv_forName.setTextSize(sizeForTV15);
 
@@ -111,36 +124,27 @@ public class RegFragment extends Fragment {
         bt_reg_fr_reg.requestLayout();
 
         et_name.setTextSize(sizeForTV15);
-        TextView tv_forLog= getActivity().findViewById(R.id.tv_reg_forLog);
         tv_forLog.setPadding(size30, size10, 0, 0);
         tv_forLog.setTextSize(sizeForTV15);
         et_log.setTextSize(sizeForTV15);
-        TextView tv_forType = getActivity().findViewById(R.id.tv_reg_forType);
+
         tv_forType.setTextSize(sizeForTV15);
         tv_forType.setPadding(size30, size20,0, 0);
         radioGroup.setPadding(size30, size10, 0, size20);
-        RadioButton rb_hospice  = getActivity().findViewById(R.id.rbt_reg_hospice);
         rb_hospice.setTextSize(sizeForTV15);
-        RadioButton rb_orphanHome  = getActivity().findViewById(R.id.rbt_reg_orphanHome);
         rb_orphanHome.setTextSize(sizeForTV15);
-        RadioButton rb_nursingHome  = getActivity().findViewById(R.id.rbt_reg_nursingHome);
         rb_nursingHome.setTextSize(sizeForTV15);
-        TextView tv_forAddress = getActivity().findViewById(R.id.tv_reg_forAddress);
         tv_forAddress.setTextSize(sizeForTV15);
         tv_forAddress.setPadding(size30, size20, 0, 0);
         et_address.setTextSize(sizeForTV15);
-        TextView tv_forLink = getActivity().findViewById(R.id.tv_reg_forLink);
         tv_forLink.setTextSize(sizeForTV15);
         tv_forLink.setPadding(size30, size20, 0, 0);
         et_link.setTextSize(sizeForTV15);
-        TextView tv_notNecessary = getActivity().findViewById(R.id.tv_reg_notNecessary);
         tv_notNecessary.setTextSize(sizeForTV15);
         tv_notNecessary.setPadding(size30, size20, 0, 0);
-        TextView tv_forPass1 = getActivity().findViewById(R.id.tv_reg_forPass);
         tv_forPass1.setTextSize(sizeForTV15);
         tv_forPass1.setPadding(size30, size20, 0, 0);
         et_pass.setTextSize(sizeForTV15);
-        TextView tv_forPass2 = getActivity().findViewById(R.id.tv_reg_forPass2);
         tv_forPass2.setTextSize(sizeForTV15);
         tv_forPass2.setPadding(size30, size20, 0, 0);
         et_checkPass.setTextSize(sizeForTV15);
@@ -180,6 +184,10 @@ public class RegFragment extends Fragment {
                     else if(openHelper.findOrgByLogin(et_log.getText().toString()).getId() != -1
                             || openHelper.findOrgByAddress(et_address.getText().toString())
                             .getId() != -1) checking.setText("Такая организация уже существует");
+                    else if(!isOnline()){
+                        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+                        fragmentManager.beginTransaction().add(R.id.fl_reg, new NoInternetConnectionFragment()).commit();
+                    }
                     else {
                         String name = et_name.getText().toString();
                         String pass = et_pass.getText().toString();
@@ -203,7 +211,7 @@ public class RegFragment extends Fragment {
                                 e.printStackTrace();
                             }
                             Organization organization = new Organization(
-                                    name, login, type, null, "",
+                                    name, login, type, IMAGE_URL, "",
                                     address, "", linkToWebsite,  encodedHash);
                             openHelper.insertOrg(organization);
                             new AppApiVolley(getContext()).addOrganization(openHelper.findOrgByLogin(login));
@@ -220,5 +228,14 @@ public class RegFragment extends Fragment {
         }catch (Exception e) {
             Log.e("MY_LOG", e.getMessage());
         }
+        return view;
+    }
+
+    public boolean isOnline(){
+        ConnectivityManager connectivityManager = (ConnectivityManager) getActivity().
+                getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        if(networkInfo == null) return false;
+        else return networkInfo.isConnected();
     }
 }

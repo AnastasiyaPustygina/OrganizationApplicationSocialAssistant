@@ -43,7 +43,8 @@ public class AppApiVolley implements AppApi {
 
     public static final String API_TEST = "API_TEST";
     private final Context context;
-    public static final String BASE_URL = "http://192.168.1.103:8081";
+    public static final String BASE_URL = "http://78.40.217.59:9995";
+
     private Response.ErrorListener errorListener;
 
 
@@ -144,18 +145,11 @@ public class AppApiVolley implements AppApi {
                                 "op", null, OpenHelper.VERSION);
                         openHelper.deleteAllChat();
                         openHelper.deleteAllPeople();
-                        Log.e("API_TEST_FILL_CHAT", response.length() + "");
                         try {
                             for (int i = 0; i < response.length(); i++) {
                                 JSONObject jsonObject = response.getJSONObject(i);
                                 Chat chat = ChatMapper.chatFromJson(jsonObject, context);
                                 openHelper.insertChat(chat);
-                                Log.e("FILL CHAT", chat.toString());
-                                try {
-                                    Log.e("AFTER FILL CHAT", openHelper.findAllChatId().toString());
-                                } catch (Exception e) {
-                                    Log.e("AFTER FILL CHAT", e.getMessage());
-                                }
                             }
                         } catch (JSONException e) {
                             Log.e("API_TEST", e.getMessage());
@@ -310,18 +304,11 @@ public class AppApiVolley implements AppApi {
                         OpenHelper openHelper = new OpenHelper(context,
                                 "op", null, OpenHelper.VERSION);
                         openHelper.deleteAllMessage();
-                        Log.e("API_TEST_FILL_MSG", response.length() + "");
                         try {
                             for (int i = 0; i < response.length(); i++) {
                                 JSONObject jsonObject = response.getJSONObject(i);
                                 Message message = MessageMapper.messageFromJson(jsonObject, context);
                                 openHelper.insertMsg(message);
-                                Log.e("FILL MSG", message.toString());
-                                try {
-                                    Log.e("AFTER FILL MSG", openHelper.findAllMsgVal().toString());
-                                } catch (Exception e) {
-                                    Log.e("AFTER FILL MSG", e.getMessage());
-                                }
                             }
                         } catch (JSONException e) {
                             Log.e("API_TEST", e.getMessage());
@@ -376,7 +363,8 @@ public class AppApiVolley implements AppApi {
             person.put("date_of_birth", chat.getPerson().getDateOfBirth());
             person.put("age", chat.getPerson().getAge());
             person.put("password", sharedPreferences.getString("per_pass" + chat.getPerson().getName(), "Password Not Found!"));
-
+            person.put("favourite_organization", sharedPreferences.getString(
+                    "per_fav_org" + chat.getPerson().getName(), ""));
 
             params.put("personDto", person);
 
@@ -392,11 +380,8 @@ public class AppApiVolley implements AppApi {
             org.put("needs", organization.getNeeds());
             org.put("linkToWebsite", organization.getLinkToWebsite());
             org.put("password", organization.getPass());
-
-
-
             params.put("organizationDto", org);
-            Log.e("aavac", params.toString());
+
         } catch (JSONException e) {
             Log.e("API_TASK_ADD_CHAT", e.getMessage());
         }
@@ -414,9 +399,36 @@ public class AppApiVolley implements AppApi {
                 int size = Integer.parseInt(response);
                 OpenHelper openHelper = new OpenHelper(context, "op",
                         null, OpenHelper.VERSION);
+                try{
                 if(openHelper.findAllMsg().size() != size){
                     fillMsg();
+                    }
 
+                }catch(Exception e){
+                    Log.e("checkNewMsg", e.getMessage());
+                }
+            }
+        }, errorListener);
+        referenceQueue.add(stringRequest);
+    }
+    @Override
+    public void checkNewChat() {
+        String url = BASE_URL + "/chat/size";
+        RequestQueue referenceQueue = Volley.newRequestQueue(context);
+        StringRequest stringRequest = new StringRequest(Request.Method.GET,
+                url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                int size = Integer.parseInt(response);
+                OpenHelper openHelper = new OpenHelper(context, "op",
+                        null, OpenHelper.VERSION);
+                try{
+                    if(openHelper.findAllChats().size() != size) {
+                        fillChats();
+                    }
+                    checkNewMsg();
+                }catch (Exception e){
+                    Log.e("AppApiCheckNewChat", e.getMessage());
                 }
             }
         }, errorListener);

@@ -34,6 +34,9 @@
         <action
             android:id="@+id/action_orgProfileFragment_to_listOfChatsFragment"
             app:destination="@id/listOfChatsFragment" />
+        <action
+            android:id="@+id/action_orgProfileFragment_to_signInFragment"
+            app:destination="@id/signInFragment" />
     </fragment>
     <fragment
         tools:layout="@layout/list_of_chats_fragment"

@@ -80,7 +80,6 @@ public class ChatListArrayAdapter extends RecyclerView.Adapter<ChatListArrayAdap
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         try{
-            try{
                 Picasso.get().load(arrayListLastPer.get(position).getPhotoPer()).into(holder.ivPerAva);
             }catch (Exception e){
                 holder.ivPerAva.setImageDrawable(context.getResources().getDrawable(R.drawable.ava_for_project));
@@ -95,7 +94,6 @@ public class ChatListArrayAdapter extends RecyclerView.Adapter<ChatListArrayAdap
 
                     bundle.putString("LOG", log);
                     bundle.putString("NamePer", holder.tvNamePer.getText().toString());
-                    Log.e("OCL_CHATLISTADAPT", bundle.getString("NamePer"));
 
                     holder.itemView.setOnClickListener((view1) -> {
                         NavHostFragment.
@@ -105,9 +103,6 @@ public class ChatListArrayAdapter extends RecyclerView.Adapter<ChatListArrayAdap
                     holder.itemView.performClick();
                 }
             });
-        } catch (Exception e){
-            Log.e("ChatLIstArrayAdapter", e.getMessage() + e.toString());
-        }
     }
 
     @Override

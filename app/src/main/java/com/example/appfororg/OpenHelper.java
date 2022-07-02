@@ -414,7 +414,6 @@ public class OpenHelper extends SQLiteOpenHelper {
         do {
             int currentChatId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CHAT_ID));
             int perId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PERSON_CHAT_ID));
-            Log.e("oh", perId + "");
             if(currentChatId == chat_id) return findPersonById(perId);
         }while (cursor.moveToNext());
         return new Person(-100, null,null,19, null,null,null);
@@ -642,8 +641,7 @@ public class OpenHelper extends SQLiteOpenHelper {
             }while (cursor.moveToNext());
 
         } catch (CursorIndexOutOfBoundsException e){
-            Log.e("MY_LOG", "нулевой findAllOrg");};
-
+            Log.e("MY_LOG", e.getMessage());};
         return arrOrg;
 
     }
@@ -700,6 +698,26 @@ public class OpenHelper extends SQLiteOpenHelper {
         do {
             int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_MSG_CHAT_ID));
             arrChat.add(id);
+        }while (cursor.moveToNext());
+        return arrChat;
+    }
+    public ArrayList<Chat> findAllChats(){
+        ArrayList<Chat> arrChat = new ArrayList<>();
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor cursor = db.query(TABLE_CHAT_NAME,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+        cursor.moveToFirst();
+        do {
+            int id = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_CHAT_ID));
+            int currentPersonId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PERSON_CHAT_ID));
+            int currentOrgId = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_ORGANIZATION_CHAT_ID));
+
+            arrChat.add(new Chat(id, findPersonById(currentPersonId), findOrgById(currentOrgId)));
         }while (cursor.moveToNext());
         return arrChat;
     }

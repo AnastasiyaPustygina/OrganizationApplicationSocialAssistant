@@ -1,8 +1,11 @@
 package com.example.appfororg.fragment;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,6 +18,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.example.appfororg.OpenHelper;
@@ -33,20 +37,16 @@ public class PersonProfileFragment extends Fragment {
 
 
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.person_profile_fragment, container, false);
-    }
+        View view = inflater.inflate(R.layout.person_profile_fragment, container, false);
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        iv_ava = getActivity().findViewById(R.id.iv_perProf_ava);
-        tv_age = getActivity().findViewById(R.id.tv_perProf_age);
-        tv_city = getActivity().findViewById(R.id.tv_perProf_city);
-        tv_dateOfBirth = getActivity().findViewById(R.id.tv_perProf_dateOfBirth);
-        tv_data = getActivity().findViewById(R.id.tv_perProf_data);
-        tv_name = getActivity().findViewById(R.id.tv_perProf_name);
-        tv_forData = getActivity().findViewById(R.id.tv_perProf_forData);
-        iv_arrow_back = getActivity().findViewById(R.id.bt_perProfile_arrowBack);
+        iv_ava = view.findViewById(R.id.iv_perProf_ava);
+        tv_age = view.findViewById(R.id.tv_perProf_age);
+        tv_city = view.findViewById(R.id.tv_perProf_city);
+        tv_dateOfBirth = view.findViewById(R.id.tv_perProf_dateOfBirth);
+        tv_data = view.findViewById(R.id.tv_perProf_data);
+        tv_name = view.findViewById(R.id.tv_perProf_name);
+        tv_forData = view.findViewById(R.id.tv_perProf_forData);
+        iv_arrow_back = view.findViewById(R.id.bt_perProfile_arrowBack);
 
         int data = Math.max(width, height);
         int size20 = (int) (scale * (data / 80) + 0.5f);
@@ -55,8 +55,8 @@ public class PersonProfileFragment extends Fragment {
         int size60 = (int) (scale * (data / 30) + 0.5f);
         int size30 = (int) (scale * (data / 60) + 0.5f);
         int size40 = (int) (scale * (data / 50) + 0.5f);
-        LinearLayout llForPhotoAndName = getActivity().findViewById(R.id.ll_perProf_forPhotoAndName);
-        TextView tv_prof = getActivity().findViewById(R.id.tv_perProf_profile);
+        LinearLayout llForPhotoAndName = view.findViewById(R.id.ll_perProf_forPhotoAndName);
+        TextView tv_prof = view.findViewById(R.id.tv_perProf_profile);
         tv_prof.setTextSize((float) (data / 85));
         ViewGroup.MarginLayoutParams paramsProf = (ViewGroup.MarginLayoutParams) tv_prof.getLayoutParams();
         paramsProf.setMargins(0, size60, 0, size60);
@@ -72,19 +72,19 @@ public class PersonProfileFragment extends Fragment {
         tv_data.setTextSize((float) (data / 160));
         tv_data.setPadding(size40, 0, size40, size10);
 
-        TextView tv_forDate = getActivity().findViewById(R.id.tv_perProf_forDate);
+        TextView tv_forDate = view.findViewById(R.id.tv_perProf_forDate);
         tv_forDate.setPadding(size40, size20, size40, size10);
         tv_forDate.setTextSize((float) (data / 160));
         tv_dateOfBirth.setPadding(size40, 0, size40, size10);
         tv_dateOfBirth.setTextSize((float) (data / 160));
 
-        TextView tv_forAge = getActivity().findViewById(R.id.tv_perProf_forAge);
+        TextView tv_forAge = view.findViewById(R.id.tv_perProf_forAge);
         tv_forAge.setPadding(size40, size20, size40, size10);
         tv_forAge.setTextSize((float) (data / 160));
         tv_age.setPadding(size40, 0, size40, size10);
         tv_age.setTextSize((float) (data / 160));
 
-        TextView tv_forCity = getActivity().findViewById(R.id.tv_perProf_forCity);
+        TextView tv_forCity = view.findViewById(R.id.tv_perProf_forCity);
         tv_forCity.setPadding(size40, size20, size40, size10);
         tv_forCity.setTextSize((float) (data / 160));
         tv_city.setPadding(size40, 0, size40, size50);
@@ -116,21 +116,24 @@ public class PersonProfileFragment extends Fragment {
         });
         String dataValue;
         if(person.getTelephone() != null){
-        if(person.getTelephone().isEmpty()){
+            if(person.getTelephone().isEmpty() || person.getTelephone().equals("null")){
+                tv_forData.setText("Адрес электронной почты: ");
+                dataValue = person.getEmail();
+            } else{
+                tv_forData.setText("Номер телефона : ");
+                dataValue = person.getTelephone();
+            }
+        }else{
             tv_forData.setText("Адрес электронной почты: ");
             dataValue = person.getEmail();
-        } else{
-            tv_forData.setText("Номер телефона : ");
-            dataValue = person.getTelephone();
-        }
-        }else{
-            tv_forData.setText("Номер телефона : ");
-            dataValue = person.getTelephone();
         }
         tv_data.setText(dataValue);
         tv_name.setText(person.getName());
         tv_age.setText(String.valueOf(person.getAge()));
         tv_dateOfBirth.setText(person.getDateOfBirth());
         tv_city.setText(person.getCity());
+
+        return view;
     }
+
 }

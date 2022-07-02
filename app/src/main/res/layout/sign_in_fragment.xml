@@ -40,16 +40,18 @@
         android:textColor="@color/black"
         android:textSize="15dp"
         android:text="Пароль"/>
+
     <EditText
-        android:textColor="@color/purple_700"
         android:id="@+id/ed_signIn_pass"
         android:layout_width="match_parent"
-        android:inputType="textPassword"
         android:layout_height="wrap_content"
-        android:textSize="15sp"
         android:background="@drawable/for_ed_text"
+        android:hint="@string/ed_pas"
+        android:inputType="textPassword"
+        android:textColor="@color/purple_700"
         android:textColorHint="@color/for_hint"
-        android:hint="@string/ed_pas" />
+        android:textSize="15sp" />
+
     <TextView
         android:id="@+id/tv_check"
         android:layout_width="wrap_content"
@@ -58,6 +60,15 @@
         android:gravity="center"
         android:textColor="@color/red"
         android:text=" "/>
+    <CheckBox
+        android:id="@+id/cb_signIn"
+        android:layout_marginStart="25dp"
+        android:layout_marginTop="40dp"
+        android:layout_width="match_parent"
+        android:textColor="@color/for_first_ava"
+        android:layout_height="wrap_content"
+        android:buttonTint="@color/purple_700"
+        android:text="Запомнить данные"/>
     <androidx.appcompat.widget.AppCompatButton
         android:id="@+id/bt_signIn_fr_signIn"
         android:layout_width="match_parent"

@@ -23,25 +23,19 @@ public class PersonMapper {
     public static Person personFromJson(JSONObject jsonObject, Context context) {
         Person person = null;
         try {
-            Log.e("PersonMapper", jsonObject.getString("telephone") + jsonObject.getString("email"));
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-        try {
             String data = jsonObject.getString("telephone");
             if(data.isEmpty() ||
                     data.equals("null")) {
-                Log.e(data, jsonObject.getString("email"));
                 data = jsonObject.getString("email");
             }else {
-                Log.e(data, jsonObject.getString("telephone"));
                 data = jsonObject.getString("telephone");
             }
-            Log.e("data", data);
             SharedPreferences sharedPreferences = SignInFragment.sharedPreferences;
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putString("per_pass" + jsonObject.getString("name"),
                     jsonObject.getString("password"));
+            editor.putString("per_fav_org" + jsonObject.getString("name"),
+                    jsonObject.getString("favourite_organization"));
             editor.commit();
             person = new Person(jsonObject.getInt("id"), data,
                     jsonObject.getString("name"), jsonObject.getInt("age"),
